@@ -22,17 +22,6 @@ void initWindow(std::string wName = "Test Window", const int width = 800, const 
 
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData)
-{
-	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-	return VK_FALSE;
-}
-
 int main()
 {
 	//create window
@@ -52,10 +41,6 @@ int main()
 	}
 
 	vulkanRenderer.cleanup();
-
-	//Destroy window and stop glfw
-	glfwDestroyWindow(window);
-	glfwTerminate();
 
 	return 0;
 }

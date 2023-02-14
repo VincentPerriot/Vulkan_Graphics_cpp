@@ -9,5 +9,6 @@ struct QueuefamilyIndices {
 	{
 		return graphicsFamily >= 0;
 	}
-
 };
+
+
