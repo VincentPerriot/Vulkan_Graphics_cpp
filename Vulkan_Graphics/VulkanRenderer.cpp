@@ -10,8 +10,9 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 	try {
 		createInstance();
 		setupDebugMessenger();
+		createSurface();
 		getPhysicalDevice();
-		createInstance();
+		createLogicalDevice();
 	}
 	catch (const std::runtime_error& e) {
 		printf("Error: %s\n", e.what());
@@ -23,11 +24,14 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {
-	//if (enableValidationLayers) 
-	//{
-    //    DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    //}
 	vkDestroyDevice(mainDevice.logicalDevice, nullptr);
+
+	// TODO Understand why this does not call an error
+	if (enableValidationLayers) 
+	{
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    }
+
 	vkDestroyInstance(instance, nullptr);
 
 	//Destroy window and stop glfw
@@ -52,12 +56,12 @@ void VulkanRenderer::createInstance()
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "Vulkan App"; //App details
-	appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0); 
+	appInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 1, 0); 
 	appInfo.pEngineName = "No Engine"; // Engine details
-	appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_3; //Vulkan Version
+	appInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 1, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_2; //Vulkan Version
 
-	//Creattion information for vkInstance
+	//Creates information for vkInstance
 	VkInstanceCreateInfo createInfo = {};
 
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -82,23 +86,6 @@ void VulkanRenderer::createInstance()
 
 	//Create list to hold instance extensions
 	std::vector<const char*> instanceExtensions = std::vector<const char*>();
-
-	// Set up extensions from Udemy code 
-	// Keeping them in casee needed later in tutorial
-	// Remove later when tutorial finished
-	//uint32_t glfwExtensionCount = 0; // Current
-	//const char** glfwExtensions;	 // Extensions passed as arrays of C strings hence **
-
-	// get GlFW extensions
-	//glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	// Add glfw extensions to list of extensions
-	//for (size_t i = 0; i < glfwExtensionCount; i++)
-	//{
-	//	instanceExtensions.push_back(glfwExtensions[i]);
-	//}
-	//check for instance extensions support
-
 	auto extensions = getRequiredExtensions();
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
@@ -108,22 +95,12 @@ void VulkanRenderer::createInstance()
 		throw std::runtime_error("Vulkan instance does not support required extensions");
 	}
 
-	//createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
-	//createInfo.ppEnabledExtensionNames = instanceExtensions.data();
-
-
-	//TODO set up validation
-	createInfo.enabledLayerCount = 0;
-	createInfo.ppEnabledLayerNames = nullptr;
-
 	//create instance
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-
 	if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create Vulkan instance");
 	}
-
 
 }
 
@@ -134,7 +111,7 @@ void VulkanRenderer::createLogicalDevice()
 
 	//Queues logical device needs to create and info to do so (only 1 at the moment)
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
 	queueCreateInfo.queueCount = 1;
 
@@ -152,6 +129,15 @@ void VulkanRenderer::createLogicalDevice()
 	deviceCreateInfo.ppEnabledExtensionNames = nullptr; //list of logical device extensions
 	deviceCreateInfo.enabledLayerCount = 0;
 
+	if (enableValidationLayers) 
+	{
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    } else 
+	{
+        deviceCreateInfo.enabledLayerCount = 0;
+    }
+
 	// Empty struct as of now, will update with features used (check def and set to true)
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 
@@ -168,6 +154,10 @@ void VulkanRenderer::createLogicalDevice()
 	// Place reference in given vk_queue
 	vkGetDeviceQueue(mainDevice.logicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
 
+}
+
+void VulkanRenderer::createSurface()
+{
 }
 
 void VulkanRenderer::getPhysicalDevice()
@@ -340,5 +330,39 @@ QueuefamilyIndices VulkanRenderer::getQueueFamilies(VkPhysicalDevice device)
 	}
 	return indices;
 }
+
+//Setup Debug Utils
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void* pUserData)
+{
+	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	return VK_FALSE;
+}
+
+VkResult VulkanRenderer::createDebugUtilsMessengerEXT(VkInstance instance, 
+	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+	const VkAllocationCallbacks* pAllocator, 
+	VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+	} else {
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+void VulkanRenderer::DestroyDebugUtilsMessengerEXT(VkInstance instance, 
+	const VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) 
+{
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		func(instance, debugMessenger, pAllocator);
+	}
+}
+
+
 
 
