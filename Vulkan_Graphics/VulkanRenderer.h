@@ -7,6 +7,8 @@
 #include <cstring>
 #include <iostream>
 #include <optional>
+#include <set>
+#include <algorithm>
 
 #include "utils.h"
 
@@ -24,7 +26,7 @@ public:
 private:
 	GLFWwindow* window;
 
-	//Vulkan Components
+	// Mian Vulkan Components
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	const std::vector<const char*> validationLayers = {
@@ -35,7 +37,14 @@ private:
 		VkDevice logicalDevice;
 	} mainDevice;
 	VkQueue graphicsQueue;
+	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
+	VkSwapchainKHR swapchain;
+	std::vector<SwapchainImage> swapChainImages;
+
+	// Utility Vulkan Components
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
 	
 	#ifdef NDEBUG
 	const bool enableValidationLayers = false;
@@ -43,11 +52,12 @@ private:
 	const bool enableValidationLayers = true;
 	#endif
 
-	//Vulkan Functions
+	// Main Vulkan Functions
 	// --create functions
 	void createInstance();
 	void createLogicalDevice();
 	void createSurface();
+	void createSwapChain();
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
@@ -58,14 +68,24 @@ private:
 
 	// - Support Functions
 	// -- Checker Functions
-	bool checkExtensionSupport(std::vector<const char*>* checkExtensions);
+	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	bool checkDeviceSuitable(VkPhysicalDevice device);
 	bool checkValidationLayerSupport();
 	
 	//--Getter Functions
-	QueuefamilyIndices getQueueFamilies(VkPhysicalDevice device);
+	QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
+	SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
 
-	// Debugging Utilities
+	//--Choose Functions
+	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
+	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
+
+	// -- Create Functions
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+	// -- Debugging Utilities
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
 		VkDebugUtilsMessageTypeFlagsEXT messageType, 
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
