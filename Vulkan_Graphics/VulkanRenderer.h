@@ -42,6 +42,9 @@ private:
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapChainImages;
 
+	// Pipeline
+	VkPipelineLayout pipelineLayout;
+
 	// Utility Vulkan Components
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
@@ -58,6 +61,7 @@ private:
 	void createLogicalDevice();
 	void createSurface();
 	void createSwapChain();
+	void createRenderPass();
 	void createGraphicsPipeline();
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

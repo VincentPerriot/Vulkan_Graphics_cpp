@@ -14,6 +14,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		getPhysicalDevice();
 		createLogicalDevice();
 		createSwapChain();
+		createRenderPass();
 		createGraphicsPipeline();
 	}
 	catch (const std::runtime_error& e) {
@@ -26,6 +27,8 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {
+	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
+
 	for (auto image : swapChainImages)
 	{
 		vkDestroyImageView(mainDevice.logicalDevice, image.imageView, nullptr);
@@ -268,6 +271,18 @@ void VulkanRenderer::createSwapChain()
 	}
 }
 
+void VulkanRenderer::createRenderPass()
+{
+	// Color attachment of the render pass
+	VkAttachmentDescription colorAttachment = {};
+	colorAttachment.format = swapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+	VkRenderPassCreateInfo renderPassCreateInfo = {};
+	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+}
+
 void VulkanRenderer::createGraphicsPipeline()
 {
 	// Read our Spir-V code 
@@ -302,6 +317,117 @@ void VulkanRenderer::createGraphicsPipeline()
 	};
 
 	// Create Pipeline
+	// -- Vertex input (TODO: Put in vertex desc when created)--
+	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
+	vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
+	vertexInputCreateInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
+
+	// -- Input Assembly
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+	// -- Viewport and Scissor --
+
+	// ViewPort Settings
+	VkViewport viewport = {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)swapChainExtent.width;
+	viewport.height = (float)swapChainExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	// Scissor settings
+	VkRect2D scissor = {};
+	scissor.offset = { 0, 0 };
+	scissor.extent = swapChainExtent;
+
+	VkPipelineViewportStateCreateInfo viewPortStateCreateInfo = {};
+	viewPortStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewPortStateCreateInfo.viewportCount = 1;
+	viewPortStateCreateInfo.pViewports = &viewport;
+	viewPortStateCreateInfo.scissorCount = 1;
+	viewPortStateCreateInfo.pScissors = &scissor;
+	
+	/*
+	// -- Dynamic State -- For later use
+	std::vector<VkDynamicState> dynamicStateEnables;
+	dynamicStateEnables.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	dynamicStateEnables.push_back(VK_DYNAMIC_STATE_SCISSOR);
+	
+	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
+	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+	dynamicStateCreateInfo.pDynamicStates = dynamicStateEnables.data();
+	*/
+
+	// -- Rasterizer -- 
+	VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo = {};
+	rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizerCreateInfo.depthClampEnable = VK_FALSE;
+	rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE; // Useful to skip fragment creation, good for calculation buffers
+	rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizerCreateInfo.lineWidth = 1.0f;
+	rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizerCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizerCreateInfo.depthBiasEnable = VK_FALSE;	// Add to frag when needed for stopping shadow acne
+
+	// -- Multi Sampling -- Enable later if needed
+	VkPipelineMultisampleStateCreateInfo multisamplingCreateInfo = {};
+	multisamplingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisamplingCreateInfo.sampleShadingEnable = VK_FALSE;
+	multisamplingCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	// -- Blending -- 
+	// Decides how to blend a new color being written to a fragment with the old values
+
+	// Blend attachment state
+	VkPipelineColorBlendAttachmentState colorState = {};
+	colorState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+		VK_COLOR_COMPONENT_G_BIT |
+		VK_COLOR_COMPONENT_B_BIT |
+		VK_COLOR_COMPONENT_A_BIT;
+	colorState.blendEnable = VK_TRUE;
+
+	// Blending uses the following eq: (sourceColorBlendFactor * newColor) colorBlendOp (dstColorBlendFactor * old Color)
+	colorState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorState.colorBlendOp = VK_BLEND_OP_ADD;
+
+	colorState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorState.alphaBlendOp = VK_BLEND_OP_ADD;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendingCreateInfo = {};
+	colorBlendingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendingCreateInfo.logicOpEnable = VK_FALSE;
+	colorBlendingCreateInfo.attachmentCount = 1;
+	colorBlendingCreateInfo.pAttachments = &colorState;
+
+	// -- Pipeline Layout -- (TODO apply desc Set Layouts)
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.setLayoutCount = 0;
+	pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+
+	// Create Pipeline Layout
+	VkResult result = vkCreatePipelineLayout(mainDevice.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+
+	if (result != VK_SUCCESS)
+	{
+		throw::std::runtime_error("Failed to create Pipeline Layout");
+	}
+
+	// TODO: Setup depth Stencil testing
+	// -- Depth Stencil testing
+
 
 	// Destroy Modules
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
