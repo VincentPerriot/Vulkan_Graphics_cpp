@@ -9,6 +9,7 @@
 #include <optional>
 #include <set>
 #include <algorithm>
+#include <array>
 
 #include "utils.h"
 
@@ -43,7 +44,9 @@ private:
 	std::vector<SwapchainImage> swapChainImages;
 
 	// Pipeline
+	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
+	VkRenderPass renderPass;
 
 	// Utility Vulkan Components
 	VkFormat swapChainImageFormat;
