@@ -20,6 +20,7 @@ public:
 	VulkanRenderer();
 
 	int init(GLFWwindow* newWindow);
+	void draw();
 	void cleanup();
 
 	~VulkanRenderer();
@@ -32,7 +33,7 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger;
 	const std::vector<const char*> validationLayers = {
 		"VK_LAYER_KHRONOS_validation"
-	};	
+	};
 	struct {
 	VkPhysicalDevice physicalDevice;
 		VkDevice logicalDevice;
@@ -42,15 +43,24 @@ private:
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapChainImages;
+	std::vector<VkFramebuffer> swapChainFramebuffers;
+	std::vector<VkCommandBuffer> commandBuffers;
 
 	// Pipeline
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
 
+	// Pools
+	VkCommandPool graphicsCommandPool;
+
 	// Utility Vulkan Components
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
+
+	// Synchronisation
+	VkSemaphore imageAvailable;
+	VkSemaphore renderFinished;
 	
 	#ifdef NDEBUG
 	const bool enableValidationLayers = false;
@@ -66,8 +76,15 @@ private:
 	void createSwapChain();
 	void createRenderPass();
 	void createGraphicsPipeline();
+	void createFramebuffer();
+	void createCommandPool();
+	void createCommandBuffers();
+	void createSynchronisation();
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+	// Record Functions
+	void recordCommands();
 
 	// - Get Functions
 	void getPhysicalDevice();
