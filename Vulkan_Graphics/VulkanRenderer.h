@@ -28,6 +28,8 @@ public:
 private:
 	GLFWwindow* window;
 
+	int currentFrame = 0;
+
 	// Mian Vulkan Components
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
@@ -59,8 +61,9 @@ private:
 	VkExtent2D swapChainExtent;
 
 	// Synchronisation
-	VkSemaphore imageAvailable;
-	VkSemaphore renderFinished;
+	std::vector<VkSemaphore> imageAvailable;
+	std::vector<VkSemaphore> renderFinished;
+	std::vector<VkFence> drawFences;
 	
 	#ifdef NDEBUG
 	const bool enableValidationLayers = false;
