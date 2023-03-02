@@ -42,5 +42,6 @@
     <None Include="Shaders\compile_shaders.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="readme.md" />
   </ItemGroup>
 </Project>
