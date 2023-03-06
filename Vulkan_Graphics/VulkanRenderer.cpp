@@ -458,7 +458,7 @@ void VulkanRenderer::createDescriptorSetLayout()
 {
 	// MVP Binding info
 	VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
-	mvpLayoutBinding.binding = 0;
+	mvpLayoutBinding.binding = 1;
 
 	// Create descriptor set layout for given bindings
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
