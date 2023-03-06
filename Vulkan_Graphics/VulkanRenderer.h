@@ -62,6 +62,12 @@ private:
 	// - Descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
 
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
+
+	std::vector<VkBuffer> uniformBuffer;
+	std::vector<VkDeviceMemory> uniformBufferMemory;
+
 	// Pipeline
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
@@ -100,6 +106,10 @@ private:
 	void createSynchronisation();
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+	void createUniformBuffers();
+	void createDescriptorPool();
+	void createDescriptorSets();
 
 	// Record Functions
 	void recordCommands();
