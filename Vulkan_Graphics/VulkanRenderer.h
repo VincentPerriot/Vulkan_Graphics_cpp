@@ -32,7 +32,14 @@ private:
 	int currentFrame = 0;
 
 	// Scene objects
-	Mesh firstMesh;
+	std::vector<Mesh> meshList;
+
+	// Scene settings
+	struct MVP {
+		glm::mat4 projections;
+		glm::mat4 view;
+		glm::mat4 model;
+	} mvp;
 
 	// Mian Vulkan Components
 	VkInstance instance;
@@ -51,6 +58,9 @@ private:
 	std::vector<SwapchainImage> swapChainImages;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffers;
+
+	// - Descriptors
+	VkDescriptorSetLayout descriptorSetLayout;
 
 	// Pipeline
 	VkPipeline graphicsPipeline;
@@ -82,6 +92,7 @@ private:
 	void createSurface();
 	void createSwapChain();
 	void createRenderPass();
+	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffer();
 	void createCommandPool();

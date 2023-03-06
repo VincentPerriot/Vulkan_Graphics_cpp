@@ -13,21 +13,44 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createSurface();
 		getPhysicalDevice();
 		createLogicalDevice();
+		createSwapChain();
+		createRenderPass();
+		createDescriptorSetLayout();
+		createGraphicsPipeline();
+		createFramebuffer();
+		createCommandPool();
 
 		// Create Mesh
 		std::vector<Vertex> meshVertices =
 		{
-			{{0.0, -0.4, 0.0}},
-			{{0.4, 0.4, 0.0}},
-			{{-0.4, 0.4, 0.0}}
+			{{-0.1, -0.4, 0.0}, {1.0, 0.0, 0.0}},
+			{{-0.1, 0.4, 0.0}, {0.0, 1.0, 0.0}},
+			{{-0.9, 0.4, 0.0}, {0.0, 0.0, 1.0}},
+			{{-0.9, -0.4, 0.0}, {1.0, 1.0, 0.0}}
 		};
-		firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, &meshVertices);
+		std::vector<Vertex> meshVertices2 =
+		{
+			{{0.9, -0.4, 0.0}, {1.0, 0.0, 0.0}},
+			{{0.9, 0.4, 0.0}, {0.0, 1.0, 0.0}},
+			{{0.1, 0.4, 0.0}, {0.0, 0.0, 1.0}},
+			{{0.1, -0.4, 0.0}, {1.0, 1.0, 0.0}}
+		};
 
-		createSwapChain();
-		createRenderPass();
-		createGraphicsPipeline();
-		createFramebuffer();
-		createCommandPool();
+		std::vector<uint32_t> meshIndices = {
+			0, 1, 2,
+			2, 3, 0,
+		};
+
+		Mesh firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, 
+			graphicsQueue, graphicsCommandPool, 
+			&meshVertices, &meshIndices);
+		Mesh secondMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice,
+			graphicsQueue, graphicsCommandPool,
+			&meshVertices2, &meshIndices);
+
+		meshList.push_back(firstMesh);
+		meshList.push_back(secondMesh);
+
 		createCommandBuffers();
 		recordCommands();
 		createSynchronisation();
@@ -100,7 +123,11 @@ void VulkanRenderer::cleanup()
 {
 	// Wait until no action run on device before destroying
 	vkDeviceWaitIdle(mainDevice.logicalDevice);
-	firstMesh.destroyVertexBuffer();
+	
+	for (size_t i = 0; i < meshList.size(); i++)
+	{
+		meshList[i].destroyBuffers();
+	}
 	
 	for (size_t i = 0; i < MAX_FRAMES_DRAWS; i++)
 	{
@@ -427,6 +454,19 @@ void VulkanRenderer::createRenderPass()
 	}
 }
 
+void VulkanRenderer::createDescriptorSetLayout()
+{
+	// MVP Binding info
+	VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
+	mvpLayoutBinding.binding = 0;
+
+	// Create descriptor set layout for given bindings
+	VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+
+}
+
 void VulkanRenderer::createGraphicsPipeline()
 {
 	// Read our Spir-V code 
@@ -467,11 +507,20 @@ void VulkanRenderer::createGraphicsPipeline()
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;		// How to move between data after each vertex
 
 	// How data for an attribute is defined within a vertex
-	std::array<VkVertexInputAttributeDescription, 1> attributeDescription;
+	std::array<VkVertexInputAttributeDescription, 2> attributeDescription;
+
+	// Position attribute
 	attributeDescription[0].binding = 0;
 	attributeDescription[0].location = 0;
 	attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescription[0].offset = offsetof(Vertex, pos);			// Offset of Data within Struct Vertex
+
+	// Color Attribute	
+	attributeDescription[1].binding = 0;
+	attributeDescription[1].location = 1;
+	attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescription[1].offset = offsetof(Vertex, col);			// Offset of Data within Struct Vertex
+
 
 	// Create Pipeline
 	// -- Vertex input --
@@ -923,17 +972,23 @@ void VulkanRenderer::recordCommands()
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			// Binds pipeline to be used in RenderPAss
-			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-			
+		// Binds pipeline to be used in RenderPAss
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		
+		for (size_t j = 0; j < meshList.size(); j++)
+		{
 			// Buffers to bind
-			VkBuffer vertexBuffers[] = { firstMesh.getVertexBuffer() };
+			VkBuffer vertexBuffers[] = { meshList[j].getVertexBuffer()};
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+			// Binds mesh index buffer with 0 offset
+			vkCmdBindIndexBuffer(commandBuffers[i], meshList[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 	
 			// Executes the pipeline
-			vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);
-
+			vkCmdDrawIndexed(commandBuffers[i], meshList[j].getIndexCount(), 1, 0, 0, 0);
+		}
+		
 		vkCmdEndRenderPass(commandBuffers[i]);
 
 		// Stop recording
