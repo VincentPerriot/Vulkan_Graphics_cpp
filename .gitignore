@@ -361,4 +361,3 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/Vulkan_Graphics/Shaders/shader.vert
