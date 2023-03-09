@@ -6,7 +6,7 @@ Mesh::Mesh()
 
 Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, 
 	VkQueue transferQueue, VkCommandPool transferCommandPool,
-	std::vector<Vertex>* vertices, std::vector<uint32_t> * indices)
+	std::vector<Vertex>* vertices, std::vector<uint32_t> * indices, int newTexId)
 {
 	vertexCount = vertices->size();
 	indexCount = indices->size();
@@ -16,6 +16,7 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice,
 	createIndexBuffer(transferQueue, transferCommandPool, indices);
 
 	uboModel.model = glm::mat4(1.0f);
+	texId = newTexId;
 }
 
 void Mesh::setModel(glm::mat4 newModel)
@@ -26,6 +27,11 @@ void Mesh::setModel(glm::mat4 newModel)
 UboModel Mesh::getModel()
 {
 	return uboModel;
+}
+
+int Mesh::getTexId()
+{
+	return texId;
 }
 
 

@@ -71,12 +71,17 @@ private:
 	VkImage depthBufferImage;
 	VkDeviceMemory depthBufferImageMemory;
 	VkImageView depthBufferImageView;
+	
+	VkSampler textureSampler;
 
 	// - Descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout samplerSetLayout;
 
 	VkDescriptorPool descriptorPool;
+	VkDescriptorPool samplerDescriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkDescriptorSet> samplerDescriptorSets;
 
 	std::vector<VkBuffer> vpUniformBuffer;
 	std::vector<VkDeviceMemory> vpUniformBufferMemory;
@@ -87,6 +92,12 @@ private:
 	VkDeviceSize minUniformBufferOffset;
 	size_t modelUniformAligment;
 	UboModel* modelTransferSpace;
+
+	// -- Assets
+	std::vector<VkImage> textureImages;		
+	// Later optimisation, only keep 1 device memory with offsets
+	std::vector<VkDeviceMemory> textureImageMemory;
+	std::vector<VkImageView> textureImageViews;
 
 	// Pipeline
 	VkPipeline graphicsPipeline;
@@ -125,9 +136,10 @@ private:
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSynchronisation();
+	void createTextureSampler();
+
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();
@@ -167,6 +179,13 @@ private:
 	VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory);
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
+
+	int createTextureImage(std::string filename);
+	int createTexture(std::string filename);
+	int createTextureDescriptor(VkImageView textureImage);
+
+	// -- Loader functions
+	stbi_uc* loadTextureFile(std::string filename, int* width, int* height, VkDeviceSize* imageSize);
 
 	// -- Debugging Utilities
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 

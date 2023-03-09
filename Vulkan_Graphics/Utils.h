@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 
 const int MAX_FRAMES_DRAWS = 2;
-const int MAX_OBJECTS = 1024;
+const int MAX_OBJECTS = 4;
 
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -17,6 +17,7 @@ const std::vector<const char*> deviceExtensions = {
 struct Vertex {
 	glm::vec3 pos; // Vertex Position (x, y, z)
 	glm::vec3 col; // vertex Color (r, g, b)
+	glm::vec2 tex; // Texture coords (u, v)
 };
 
 // Indices (locations) of Queue Families (if they exist at all)
@@ -123,21 +124,21 @@ static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDev
 	vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
 }
 
-static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
-	VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
+
+static VkCommandBuffer beginCommandBuffer(VkDevice device, VkCommandPool commandPool)
 {
 	// Command buffer to hold transfer commands
-	VkCommandBuffer transferCommandBuffer;
+	VkCommandBuffer commandBuffer;
 
 	// Command buffer details
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = transferCommandPool;
+	allocInfo.commandPool = commandPool;
 	allocInfo.commandBufferCount = 1;
 
 	// Allocate command buffer from pool
-	vkAllocateCommandBuffers(device, &allocInfo, &transferCommandBuffer);
+	vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
 
 	// Information to begin the command buffer record
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -145,7 +146,37 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	// Begin recording transfer commands
-	vkBeginCommandBuffer(transferCommandBuffer, &beginInfo);
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	return commandBuffer;
+
+}
+
+static void endAndSubmitCommandBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkCommandBuffer commandBuffer)
+{
+	// End command
+	vkEndCommandBuffer(commandBuffer);
+
+	// Queue submission info
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	// Submit transfer command to trasfer queue and wait until finishes
+	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(queue);
+
+	// Free temporary command buffer back to pool
+	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+
+}
+
+static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
+	VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
+{
+	// Create buffer
+	VkCommandBuffer transferCommandBuffer = beginCommandBuffer(device, transferCommandPool);
 
 	// Region of data to copy from and region to copy to
 	VkBufferCopy bufferCopyRegion = {};
@@ -156,20 +187,78 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 	// Command to copy src buffer to dst buffer
 	vkCmdCopyBuffer(transferCommandBuffer, srcBuffer, dstBuffer, 1, &bufferCopyRegion);
 
-	// End command
-	vkEndCommandBuffer(transferCommandBuffer);
+	endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
+}
 
-	// Queue submission info
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &transferCommandBuffer;
+static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
+	VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
+{
+	VkCommandBuffer transferCommandBuffer = beginCommandBuffer(device, transferCommandPool);
+	
+	VkBufferImageCopy imageRegion = {};
+	imageRegion.bufferOffset = 0;
+	imageRegion.bufferRowLength = 0;										// Used for data spacing calculation
+	imageRegion.bufferImageHeight = 0;
+	imageRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageRegion.imageSubresource.mipLevel = 0;
+	imageRegion.imageSubresource.baseArrayLayer = 0;
+	imageRegion.imageSubresource.layerCount = 1;
+	imageRegion.imageOffset = { 0, 0, 0 };									// Offset image image x,y,z
+	imageRegion.imageExtent = { width, height, 1 };							// Size of region to copy
 
-	// Submit transfer command to trasfer queue and wait until finishes
-	vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(transferQueue);
+	vkCmdCopyBufferToImage(transferCommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
 
-	// Free temporary command buffer back to pool
-	vkFreeCommandBuffers(device, transferCommandPool, 1, &transferCommandBuffer);
+	endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
+}
 
+static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkImage image,
+	VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkCommandBuffer commandBuffer = beginCommandBuffer(device, commandPool);
+
+	// Basic setup
+	VkImageMemoryBarrier imageMemoryBarier = {};
+	imageMemoryBarier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarier.oldLayout = oldLayout;
+	imageMemoryBarier.newLayout = newLayout;
+	imageMemoryBarier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarier.image = image;
+	imageMemoryBarier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;	// Aspect of image being altered
+	imageMemoryBarier.subresourceRange.baseMipLevel = 0;
+	imageMemoryBarier.subresourceRange.levelCount = 1;
+	imageMemoryBarier.subresourceRange.baseArrayLayer = 0;
+	imageMemoryBarier.subresourceRange.layerCount = 1;
+
+	VkPipelineStageFlags srcStage;
+	VkPipelineStageFlags dstStage;
+
+	// oldLayout should be transfered to newLayout before VK_ACCESS_TRANSFER_WRITE_BIT
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemoryBarier.srcAccessMask = 0;
+		imageMemoryBarier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		imageMemoryBarier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		srcStage, dstStage,					//pipeline stages (match to src and dst AccessMask)
+		0,						// Dependency flags
+		0, nullptr,				// memory barier count and data
+		0, nullptr,				// Buffer Memory barrier count and data
+		1, &imageMemoryBarier	// Image memory barier and data
+	);
+
+	endAndSubmitCommandBuffer(device, commandPool, queue, commandBuffer);
 }

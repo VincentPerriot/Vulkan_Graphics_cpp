@@ -20,7 +20,16 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createDepthBufferImage();
 		createFramebuffer();
 		createCommandPool();
-		
+		createCommandBuffers();
+		createTextureSampler();
+		allocateDynamicBufferTransferSpace();
+		createUniformBuffers();
+		createDescriptorPool();
+		createDescriptorSets();
+		recordCommands();
+		createSynchronisation();
+
+
 		uboViewProjection.projection = glm::perspective(glm::radians(45.0f), (float)swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
 		// Slightly up, looking at the origin, up is 1.0 on the y axis
 		uboViewProjection.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -32,17 +41,17 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		// Create Mesh
 		std::vector<Vertex> meshVertices =
 		{
-			{{-0.4, 0.4, 0.0}, {1.0, 0.0, 0.0}},
-			{{-0.4, -0.4, 0.0}, {1.0, 0.0, 0.0}},
-			{{0.4, -0.4, 0.0}, {1.0, 0.0, 0.0}},
-			{{0.4, 0.4, 0.0}, {1.0, 0.0, 0.0}}
+			{{-0.4, 0.4, 0.0}, {1.0, 0.0, 0.0}, {1.0f, 1.0f}},
+			{{-0.4, -0.4, 0.0}, {1.0, 0.0, 0.0}, {1.0f, 0.0f}},
+			{{0.4, -0.4, 0.0}, {1.0, 0.0, 0.0}, {0.0f, 0.0f}},
+			{{0.4, 0.4, 0.0}, {1.0, 0.0, 0.0}, {0.0f, 1.0f}}
 		};
 		std::vector<Vertex> meshVertices2 =
 		{
-			{{-0.25, 0.6, 0.0}, {0.0, 0.0, 1.0}},
-			{{-0.25, -0.6, 0.0}, {0.0, 0.0, 1.0}},
-			{{0.25, -0.6, 0.0}, {0.0, 0.0, 1.0}},
-			{{0.25, 0.6, 0.0}, {0.0, 0.0, 1.0}}
+			{{-0.25, 0.6, 0.0}, {0.0, 0.0, 1.0}, {1.0f, 1.0f}},
+			{{-0.25, -0.6, 0.0}, {0.0, 0.0, 1.0}, {1.0f, 0.0f}},
+			{{0.25, -0.6, 0.0}, {0.0, 0.0, 1.0}, {0.0f, 0.0f}},
+			{{0.25, 0.6, 0.0}, {0.0, 0.0, 1.0}, {0.0f, 1.0f}}
 		};
 
 		std::vector<uint32_t> meshIndices = {
@@ -52,22 +61,14 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 		Mesh firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, 
 			graphicsQueue, graphicsCommandPool, 
-			&meshVertices, &meshIndices);
+			&meshVertices, &meshIndices, createTexture("giraffe.jpg"));
 		Mesh secondMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice,
 			graphicsQueue, graphicsCommandPool,
-			&meshVertices2, &meshIndices);
+			&meshVertices2, &meshIndices, createTexture("panda.jpg"));
 
 		meshList.push_back(firstMesh);
 		meshList.push_back(secondMesh);
-
-
-		createCommandBuffers();
-		allocateDynamicBufferTransferSpace();
-		createUniformBuffers();
-		createDescriptorPool();
-		createDescriptorSets();
-		recordCommands();
-		createSynchronisation();
+	
 	}
 	catch (const std::runtime_error& e) {
 		printf("Error: %s\n", e.what());
@@ -144,6 +145,17 @@ void VulkanRenderer::cleanup()
 {
 	// Wait until no action run on device before destroying
 	vkDeviceWaitIdle(mainDevice.logicalDevice);
+
+	vkDestroyDescriptorPool(mainDevice.logicalDevice, samplerDescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, samplerSetLayout, nullptr);
+	vkDestroySampler(mainDevice.logicalDevice, textureSampler, nullptr);
+
+	for (size_t i = 0; i < textureImages.size(); i++)
+	{
+		vkDestroyImageView(mainDevice.logicalDevice, textureImageViews[i], nullptr);
+		vkDestroyImage(mainDevice.logicalDevice, textureImages[i], nullptr);
+		vkFreeMemory(mainDevice.logicalDevice, textureImageMemory[i], nullptr);
+	}
 
 	_aligned_free(modelTransferSpace);
 
@@ -310,6 +322,7 @@ void VulkanRenderer::createLogicalDevice()
 
 	// Empty struct as of now, will update with features used (check def and set to true)
 	VkPhysicalDeviceFeatures deviceFeatures = {};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -518,6 +531,7 @@ void VulkanRenderer::createRenderPass()
 
 void VulkanRenderer::createDescriptorSetLayout()
 {
+	// UNIFORM VALUES 
 	// UboViewProjection Binding info
 	VkDescriptorSetLayoutBinding vpLayoutBinding = {};
 	vpLayoutBinding.binding = 0;
@@ -545,6 +559,29 @@ void VulkanRenderer::createDescriptorSetLayout()
 	// Create descriptor set layout
 	VkResult result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice,
 		&layoutCreateInfo, nullptr, &descriptorSetLayout);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Unable to create Descriptor set layout");
+	}
+
+	// TEXTURE SAMPLER 
+	// Texture binding infos
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+	// Create a descriptor Set layout with binding for texture
+	VkDescriptorSetLayoutCreateInfo textureLayoutCreateInfo = {};
+	textureLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	textureLayoutCreateInfo.bindingCount = 1;
+	textureLayoutCreateInfo.pBindings = &samplerLayoutBinding;
+
+	// Create descriptor set layout
+	result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &textureLayoutCreateInfo, nullptr, &samplerSetLayout);
+
 	if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("Unable to create Descriptor set layout");
@@ -592,7 +629,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;		// How to move between data after each vertex
 
 	// How data for an attribute is defined within a vertex
-	std::array<VkVertexInputAttributeDescription, 2> attributeDescription;
+	std::array<VkVertexInputAttributeDescription, 3> attributeDescription;
 
 	// Position attribute
 	attributeDescription[0].binding = 0;
@@ -604,8 +641,13 @@ void VulkanRenderer::createGraphicsPipeline()
 	attributeDescription[1].binding = 0;
 	attributeDescription[1].location = 1;
 	attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	attributeDescription[1].offset = offsetof(Vertex, col);			// Offset of Data within Struct Vertex
+	attributeDescription[1].offset = offsetof(Vertex, col);
 
+	// Texture Attribute
+	attributeDescription[2].binding = 0;
+	attributeDescription[2].location = 2;
+	attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescription[2].offset = offsetof(Vertex, tex);
 
 	// Create Pipeline
 	// -- Vertex input --
@@ -703,10 +745,14 @@ void VulkanRenderer::createGraphicsPipeline()
 	colorBlendingCreateInfo.pAttachments = &colorState;
 
 	// -- Pipeline Layout -- 
+
+	std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { descriptorSetLayout, samplerSetLayout };
+
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
+	pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+	pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -870,6 +916,34 @@ void VulkanRenderer::createSynchronisation()
 	}
 }
 
+void VulkanRenderer::createTextureSampler()
+{
+	// Sampler Creation info
+	VkSamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;						// Magnified render
+	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;						// Minified render
+	// Handle texture wrap
+	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;	
+	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipLodBias = 0.0f;
+	samplerCreateInfo.minLod = 0.0f;
+	samplerCreateInfo.maxLod = 0.0f;
+	samplerCreateInfo.anisotropyEnable = VK_TRUE;
+	samplerCreateInfo.maxAnisotropy = 16;
+
+	VkResult result = vkCreateSampler(mainDevice.logicalDevice, &samplerCreateInfo, nullptr, &textureSampler);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create texture sampler");
+	}
+
+}
+
 void VulkanRenderer::getPhysicalDevice()
 {
 	//Enumerate physical devices for Vulkan to access
@@ -972,11 +1046,12 @@ bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 	//Information about device itself comment / uncomment when needed
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	*/
 
 	// Information on features
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-	*/
+	
 	
 	QueueFamilyIndices indices = getQueueFamilies(device);
 
@@ -988,7 +1063,7 @@ bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 		swapChainValid = !swapChainDetails.presentationModes.empty() && !swapChainDetails.formats.empty();
 	}
 
-	return indices.isValid() && swapChainValid;
+	return indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.samplerAnisotropy;
 }
 
 std::vector<const char*> VulkanRenderer::getRequiredExtensions()
@@ -1094,8 +1169,9 @@ void VulkanRenderer::createUniformBuffers()
 
 void VulkanRenderer::createDescriptorPool()
 {
-	// Describe types of descriptors and how many there are, not descriptor sets! (combine makes the pool size)
+	// CREATE UNIFORM DESCRIPTOR POOL
 
+	// Describe types of descriptors and how many there are, not descriptor sets! (combine makes the pool size)
 	// View Projection
 	VkDescriptorPoolSize vpPoolSize = {};
 	vpPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1122,6 +1198,25 @@ void VulkanRenderer::createDescriptorPool()
 	{
 		throw std::runtime_error("Failed to create a descriptor pool");
 	}
+
+	// CREATE SAMPLER DESCRIPTOR POOL
+	// texture sampler pool
+	VkDescriptorPoolSize samplerPoolSize = {};
+	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerPoolSize.descriptorCount = MAX_OBJECTS;
+	
+	VkDescriptorPoolCreateInfo samplerPoolCreateInfo = {};
+	samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	samplerPoolCreateInfo.maxSets = MAX_OBJECTS;
+	samplerPoolCreateInfo.poolSizeCount = 1;
+	samplerPoolCreateInfo.pPoolSizes = &samplerPoolSize;
+	
+	result = vkCreateDescriptorPool(mainDevice.logicalDevice, &samplerPoolCreateInfo, nullptr, &samplerDescriptorPool);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create a descriptor pool");
+	}
+
 }
 
 void VulkanRenderer::createDescriptorSets()
@@ -1260,10 +1355,12 @@ void VulkanRenderer::recordCommands()
 			// Dynamic Offset Amount
 			uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAligment) * j;
 
+			std::array<VkDescriptorSet, 2> descriptorSetGroup = { descriptorSets[i], samplerDescriptorSets[meshList[j].getTexId()] };
+
 			// Bind descriptor Sets
 			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-				0, 1, &descriptorSets[i], 1, &dynamicOffset);
-	
+				0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 1, &dynamicOffset);
+
 			// Executes the pipeline
 			vkCmdDrawIndexed(commandBuffers[i], meshList[j].getIndexCount(), 1, 0, 0, 0);
 		}
@@ -1533,6 +1630,130 @@ VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char>& code)
 	}
 
 	return shaderModule;
+}
+
+int VulkanRenderer::createTextureImage(std::string filename)
+{
+	// load image file
+	int width, height;
+	VkDeviceSize imageSize;
+	stbi_uc* imageData = loadTextureFile(filename, &width, &height, &imageSize);
+
+	// Create a staging buffer to hold loaded data 
+	VkBuffer imageStagingBuffer;
+	VkDeviceMemory imageStagingBufferMemory;
+	createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT, &imageStagingBuffer, &imageStagingBufferMemory);
+
+	void* data;
+	vkMapMemory(mainDevice.logicalDevice, imageStagingBufferMemory, 0, imageSize, 0, &data);
+	memcpy(data, imageData, static_cast<size_t>(imageSize));
+	vkUnmapMemory(mainDevice.logicalDevice, imageStagingBufferMemory);
+
+	// Free original image Data
+	stbi_image_free(imageData);
+
+	// Create image to hold final texture
+	VkImage texImage;
+	VkDeviceMemory texImageMemory;
+	texImage = createImage(width, height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		&texImageMemory);
+
+	// Copy data to image
+	// Transition image to be DST for copy operation
+	transitionImageLayout(mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, texImage,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	copyImageBuffer(mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, imageStagingBuffer, texImage, width, height);
+
+	// Transition image for shader
+	transitionImageLayout(mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, texImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	// Add textured data to vector 
+	textureImages.push_back(texImage);
+	textureImageMemory.push_back(texImageMemory);
+
+	// Destroy staging buffers
+	vkDestroyBuffer(mainDevice.logicalDevice, imageStagingBuffer, nullptr);
+	vkFreeMemory(mainDevice.logicalDevice, imageStagingBufferMemory, nullptr);
+	
+	// Return index of new texture image
+	return textureImages.size() - 1;
+}
+
+int VulkanRenderer::createTexture(std::string filename)
+{
+	// Create texture image and get its index in array
+	int textureImageLoc = createTextureImage(filename);
+
+	VkImageView imageView = createImageView(textureImages[textureImageLoc], VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+	textureImageViews.push_back(imageView);
+
+	int descriptorLoc = createTextureDescriptor(imageView);
+
+	// Return location of set with texture
+	return descriptorLoc;
+}
+
+int VulkanRenderer::createTextureDescriptor(VkImageView textureImage)
+{
+	VkDescriptorSet descriptorSet;
+
+	// Descriptor Set allocaiton info
+	VkDescriptorSetAllocateInfo setAllocInfo = {};
+	setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	setAllocInfo.descriptorPool = samplerDescriptorPool;
+	setAllocInfo.descriptorSetCount = 1;
+	setAllocInfo.pSetLayouts = &samplerSetLayout;
+
+	// Allocate Descriptor Sets
+	VkResult result = vkAllocateDescriptorSets(mainDevice.logicalDevice, &setAllocInfo, &descriptorSet);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate texture descriptor set");
+	}
+
+	// Texture image info
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = textureImage;
+	imageInfo.sampler = textureSampler;
+
+	// Descriptor write info
+	VkWriteDescriptorSet descriptorWrite = {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = descriptorSet;
+	descriptorWrite.dstBinding = 0;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pImageInfo = &imageInfo;
+
+	// Update new descriptor set
+	vkUpdateDescriptorSets(mainDevice.logicalDevice, 1, &descriptorWrite, 0, nullptr);
+
+	// Add descriptor set to list
+	samplerDescriptorSets.push_back(descriptorSet);
+
+	// Return descriptor set location
+	return samplerDescriptorSets.size() - 1;
+}
+
+stbi_uc* VulkanRenderer::loadTextureFile(std::string filename, int* width, int* height, VkDeviceSize* imageSize)
+{
+	// Number of channel image uses
+	int channels;
+	std::string fileLoc = "Textures/" + filename;
+	stbi_uc* image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb_alpha);
+
+	if (!image)
+	{
+		throw std::runtime_error("Failed to load texture file" + filename);
+	}
+	*imageSize = *width * *height * 4;
+	return image;
 }
 
 
