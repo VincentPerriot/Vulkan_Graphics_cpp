@@ -6,6 +6,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include <stdexcept>
 #include <vector>
 #include <cstring>
@@ -19,6 +23,7 @@
 
 #include "utils.h"
 #include "Mesh.h"
+#include "MeshModel.h"
 
 
 class VulkanRenderer
@@ -28,7 +33,9 @@ public:
 
 	int init(GLFWwindow* newWindow);
 
-	void updateModel(int modelId, glm::mat4 newModel);
+	void updateModel(int modelId, glm::mat4 newModel);	
+	int createMeshModel(std::string modelFile);
+
 
 	void draw();
 	void cleanup();
@@ -94,6 +101,8 @@ private:
 	UboModel* modelTransferSpace;
 
 	// -- Assets
+	std::vector<MeshModel> modelList;
+
 	std::vector<VkImage> textureImages;		
 	// Later optimisation, only keep 1 device memory with offsets
 	std::vector<VkDeviceMemory> textureImageMemory;
@@ -183,6 +192,7 @@ private:
 	int createTextureImage(std::string filename);
 	int createTexture(std::string filename);
 	int createTextureDescriptor(VkImageView textureImage);
+
 
 	// -- Loader functions
 	stbi_uc* loadTextureFile(std::string filename, int* width, int* height, VkDeviceSize* imageSize);

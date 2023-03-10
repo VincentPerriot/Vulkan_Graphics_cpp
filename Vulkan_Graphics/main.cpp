@@ -28,7 +28,7 @@ void initWindow(std::string wName = "Test Window", const int width = 800, const 
 int main()
 {
 	//create window
-	initWindow("Test Window", 800, 600);
+	initWindow("Test Window", 1366, 768);
 
 
 	//Create Vulkan Renderer Instance
@@ -40,6 +40,9 @@ int main()
 	float angle = 0.0f;
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
+
+	int helicopter = vulkanRenderer.createMeshModel("Models/Seahawk.obj");
+
 
 	//loop until close
 	while (!glfwWindowShouldClose(window))
@@ -56,17 +59,11 @@ int main()
 			angle -= 360.0f;
 		}
 
-		glm::mat4 firstModel(1.0f);
-		glm::mat4 secondModel(1.0f);
 
-		firstModel = glm::translate(firstModel, glm::vec3(0.0f, 0.0f, -2.0f));
-		firstModel = glm::rotate(firstModel, glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
-
-		secondModel = glm::translate(secondModel, glm::vec3(0.0f, 0.0f, -1.0f));
-		secondModel = glm::rotate(secondModel, glm::radians(-angle * 10), glm::vec3(0.0f, 0.0f, 1.0f));
-
-		vulkanRenderer.updateModel(0, firstModel);
-		vulkanRenderer.updateModel(1, secondModel);
+		glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		testMat = glm::scale(testMat, glm::vec3(0.5f, 0.5f, 0.5f));
+		vulkanRenderer.updateModel(helicopter, testMat);
 
 		vulkanRenderer.draw();
 	}
