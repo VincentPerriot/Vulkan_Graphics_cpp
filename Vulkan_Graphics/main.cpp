@@ -62,7 +62,7 @@ int main()
 
 		glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat = glm::scale(testMat, glm::vec3(0.5f, 0.5f, 0.5f));
+		testMat = glm::scale(testMat, glm::vec3(0.15f, 0.15f, 0.15f));
 		vulkanRenderer.updateModel(helicopter, testMat);
 
 		vulkanRenderer.draw();

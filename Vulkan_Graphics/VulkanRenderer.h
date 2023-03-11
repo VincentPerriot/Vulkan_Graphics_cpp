@@ -84,6 +84,7 @@ private:
 	// - Descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout samplerSetLayout;
+	VkPushConstantRange pushConstantRange;
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorPool samplerDescriptorPool;
@@ -96,9 +97,9 @@ private:
 	std::vector<VkBuffer> modelDynUniformBuffer;
 	std::vector<VkDeviceMemory> modelDynUniformBufferMemory;
 
-	VkDeviceSize minUniformBufferOffset;
-	size_t modelUniformAligment;
-	UboModel* modelTransferSpace;
+	//VkDeviceSize minUniformBufferOffset;
+	//size_t modelUniformAligment;
+	//UboModel* modelTransferSpace;
 
 	// -- Assets
 	std::vector<MeshModel> modelList;
@@ -139,6 +140,7 @@ private:
 	void createSwapChain();
 	void createRenderPass();
 	void createDescriptorSetLayout();
+	void createPushConstantRange();
 	void createGraphicsPipeline();
 	void createDepthBufferImage();
 	void createFramebuffer();
@@ -156,7 +158,7 @@ private:
 	void updateUniformBuffers(uint32_t imageIndex);
 
 	// Record Functions
-	void recordCommands();
+	void recordCommands(uint32_t currentImage);
 
 	// - Get Functions
 	void getPhysicalDevice();

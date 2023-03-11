@@ -33,6 +33,6 @@ class MeshModel
 
 	private:
 		std::vector<Mesh> meshList;
-		glm::mat4 model;
+		glm::mat4 model = glm::mat4(1.0f);
 };
 

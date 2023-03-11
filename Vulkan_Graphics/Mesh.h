@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-struct UboModel {
+struct Model {
 	glm::mat4 model;
 };
 
@@ -15,13 +15,15 @@ struct UboModel {
 class Mesh
 {
 public:
+
 	Mesh();
+
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, 
 		VkQueue transferQueue, VkCommandPool transferCommandPool,
 		std::vector<Vertex> *vertices, std::vector<uint32_t>* indices, int newTexId);
 
 	void setModel(glm::mat4 newModel);
-	UboModel getModel();
+	Model getModel();
 
 	int getTexId();
 
@@ -35,7 +37,7 @@ public:
 
 	~Mesh();
 private:
-	UboModel uboModel;
+	Model model;
 
 	int texId;
 
