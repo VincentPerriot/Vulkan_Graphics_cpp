@@ -10,18 +10,18 @@ layout(location = 0) out vec4 color;
 void main()
 {
 	// Keep as example of subpass use
-	int xHalf = 1366/2;
-	if (gl_FragCoord.x > xHalf)
-	{
-	float lowerBound = 0.98;
-	float upperBound = 1;
+	//int xHalf = 1366/2;
+	//if (gl_FragCoord.x > xHalf)
+	//{
+	//float lowerBound = 0.98;
+	//float upperBound = 1;
 
-	float depth = subpassLoad(inputDepth).r;
-	float depthColorScaled = 1.0f - ((depth - lowerBound) / (upperBound - lowerBound));
-	color = vec4( subpassLoad(inputColor).rgb * depthColorScaled, 1.0f);
-	}
-	else 
-	{
+	//float depth = subpassLoad(inputDepth).r;
+	//float depthColorScaled = 1.0f - ((depth - lowerBound) / (upperBound - lowerBound));
+	//color = vec4( subpassLoad(inputColor).rgb * depthColorScaled, 1.0f);
+	//}
+	//else 
+	//{
 	color = subpassLoad(inputColor).rgba;
-	}
+	//}
 }

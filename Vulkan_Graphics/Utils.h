@@ -212,7 +212,7 @@ static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPoo
 }
 
 static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkImage image,
-	VkImageLayout oldLayout, VkImageLayout newLayout)
+	VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
 {
 	VkCommandBuffer commandBuffer = beginCommandBuffer(device, commandPool);
 
@@ -226,7 +226,7 @@ static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool 
 	imageMemoryBarier.image = image;
 	imageMemoryBarier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;	// Aspect of image being altered
 	imageMemoryBarier.subresourceRange.baseMipLevel = 0;
-	imageMemoryBarier.subresourceRange.levelCount = 1;
+	imageMemoryBarier.subresourceRange.levelCount = mipLevels;
 	imageMemoryBarier.subresourceRange.baseArrayLayer = 0;
 	imageMemoryBarier.subresourceRange.layerCount = 1;
 

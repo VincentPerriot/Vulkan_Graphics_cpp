@@ -41,7 +41,8 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	int helicopter = vulkanRenderer.createMeshModel("Models/Seahawk.obj");
+	//int helicopter = vulkanRenderer.createMeshModel("Models/viking_room.obj");
+	int spaceShip = vulkanRenderer.createMeshModel("Models/E45.obj");
 
 
 	//loop until close
@@ -60,10 +61,15 @@ int main()
 		}
 
 
+		//glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 		testMat = glm::rotate(testMat, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		testMat = glm::scale(testMat, glm::vec3(0.15f, 0.15f, 0.15f));
-		vulkanRenderer.updateModel(helicopter, testMat);
+
+
+		testMat = glm::scale(testMat, glm::vec3(2.0f, 2.0f, 2.0f));
+		//vulkanRenderer.updateModel(helicopter, testMat);
+
+		vulkanRenderer.updateModel(spaceShip, testMat);
 
 		vulkanRenderer.draw();
 	}

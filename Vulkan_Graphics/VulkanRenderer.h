@@ -113,6 +113,7 @@ private:
 	// -- Assets
 
 	std::vector<VkImage> textureImages;		
+	uint32_t mipLevels;
 	// Later optimisation, only keep 1 device memory with offsets
 	std::vector<VkDeviceMemory> textureImageMemory;
 	std::vector<VkImageView> textureImageViews;
@@ -202,13 +203,15 @@ private:
 
 	// -- Create Functions
 	VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags  useFlags,
-	VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory);
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory, uint32_t mipLevels);
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
 	int createTextureImage(std::string filename);
 	int createTexture(std::string filename);
 	int createTextureDescriptor(VkImageView textureImage);
+
+	void generateMipmaps(VkImage image, int32_t width, int32_t height, uint32_t mipLevels);
 
 
 	// -- Loader functions
