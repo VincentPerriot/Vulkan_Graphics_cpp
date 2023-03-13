@@ -471,7 +471,7 @@ void VulkanRenderer::createRenderPass()
 	colorAttachmentReference.attachment = 1;
 	colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	VkAttachmentReference depthAttachmentReference = {};
-	colorAttachmentReference.attachment = 2;
+	depthAttachmentReference.attachment = 2;
 	depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	// Description Info about subpass 1
@@ -1750,8 +1750,7 @@ VkSurfaceFormatKHR VulkanRenderer::chooseBestSurfaceFormat(const std::vector<VkS
 	
 	for (const auto& format : formats)
 	{
-		if ((format.format == VK_FORMAT_R8G8B8A8_UNORM || format.format == VK_FORMAT_B8G8R8A8_UNORM)
-			&& format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (format.format == VK_FORMAT_R8G8B8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 		{
 			return format;
 		}
