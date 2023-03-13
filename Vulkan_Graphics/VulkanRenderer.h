@@ -33,8 +33,9 @@ public:
 
 	int init(GLFWwindow* newWindow);
 
-	void updateModel(int modelId, glm::mat4 newModel);	
 	int createMeshModel(std::string modelFile);
+	void updateModel(int modelId, glm::mat4 newModel);	
+
 
 
 	void draw();
@@ -48,7 +49,7 @@ private:
 	int currentFrame = 0;
 
 	// Scene objects
-	std::vector<Mesh> meshList;
+	std::vector<MeshModel> modelList;
 
 	// Scene settings
 	struct UboViewProjection {
@@ -56,7 +57,7 @@ private:
 		glm::mat4 view;
 	} uboViewProjection;
 
-	// Mian Vulkan Components
+	// Main Vulkan Components
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	const std::vector<const char*> validationLayers = {
@@ -75,21 +76,29 @@ private:
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	std::vector<VkCommandBuffer> commandBuffers;
 
-	VkImage depthBufferImage;
-	VkDeviceMemory depthBufferImageMemory;
-	VkImageView depthBufferImageView;
+	std::vector<VkImage> colorBufferImage;
+	std::vector<VkDeviceMemory> colorBufferImageMemory;
+	std::vector<VkImageView> colorBufferImageView;
+
+	std::vector<VkImage> depthBufferImage;
+	std::vector<VkDeviceMemory> depthBufferImageMemory;
+	std::vector<VkImageView> depthBufferImageView;
 	
 	VkSampler textureSampler;
 
 	// - Descriptors
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout samplerSetLayout;
+	VkDescriptorSetLayout inputSetLayout;
 	VkPushConstantRange pushConstantRange;
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorPool samplerDescriptorPool;
+	VkDescriptorPool inputDescriptorPool;
+
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> samplerDescriptorSets;
+	std::vector<VkDescriptorSet> inputDescriptorSets;
 
 	std::vector<VkBuffer> vpUniformBuffer;
 	std::vector<VkDeviceMemory> vpUniformBufferMemory;
@@ -102,7 +111,6 @@ private:
 	//UboModel* modelTransferSpace;
 
 	// -- Assets
-	std::vector<MeshModel> modelList;
 
 	std::vector<VkImage> textureImages;		
 	// Later optimisation, only keep 1 device memory with offsets
@@ -112,6 +120,10 @@ private:
 	// Pipeline
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
+
+	VkPipeline secondPipeline;
+	VkPipelineLayout secondPipelineLayout;
+
 	VkRenderPass renderPass;
 
 	// Pools
@@ -142,6 +154,7 @@ private:
 	void createDescriptorSetLayout();
 	void createPushConstantRange();
 	void createGraphicsPipeline();
+	void createColorBufferImage();
 	void createDepthBufferImage();
 	void createFramebuffer();
 	void createCommandPool();
@@ -152,8 +165,10 @@ private:
 	void setupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	void createUniformBuffers();
+
 	void createDescriptorPool();
 	void createDescriptorSets();
+	void createInputDescriptorSets();
 
 	void updateUniformBuffers(uint32_t imageIndex);
 

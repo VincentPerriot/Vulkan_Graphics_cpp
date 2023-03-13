@@ -49,5 +49,7 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="readme.md" />
+    <None Include="Shaders\second.vert" />
+    <None Include="Shaders\second.frag" />
   </ItemGroup>
 </Project>

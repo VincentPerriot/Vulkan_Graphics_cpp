@@ -5,8 +5,8 @@ layout(location =1) in vec2 fragTex;
 
 layout(set = 1, binding = 0) uniform sampler2D textureSampler;
 
-layout(location = 0) out vec4 outColour; //Final ouput color
+layout(location = 0) out vec4 outColor; //Final ouput color
 
 void main() {
-	outColour = texture(textureSampler, fragTex);
+	outColor = texture(textureSampler, fragTex);
 }

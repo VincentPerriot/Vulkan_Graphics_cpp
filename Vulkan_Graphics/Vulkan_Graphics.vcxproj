@@ -149,6 +149,8 @@
   <ItemGroup>
     <None Include="readme.md" />
     <None Include="Shaders\compile_shaders.bat" />
+    <None Include="Shaders\second.frag" />
+    <None Include="Shaders\second.vert" />
     <None Include="Shaders\shader.frag" />
     <None Include="Shaders\shader.vert" />
   </ItemGroup>
