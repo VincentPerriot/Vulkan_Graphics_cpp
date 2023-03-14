@@ -1,0 +1,28 @@
+
+		// Crate resolve info
+		VkImageResolve resolveCreateInfo = {};
+		resolveCreateInfo.srcOffset = { 0, 0, 0 };
+		resolveCreateInfo.srcSubresource.aspectMask = msaaSamples;
+		resolveCreateInfo.srcSubresource.baseArrayLayer = 1;
+		resolveCreateInfo.srcSubresource.layerCount = 1;
+		resolveCreateInfo.srcSubresource.mipLevel = mipLevels;
+		resolveCreateInfo.extent.width = swapChainExtent.width;
+		resolveCreateInfo.extent.height = swapChainExtent.height;
+		resolveCreateInfo.extent.depth = 1;
+		resolveCreateInfo.dstSubresource.aspectMask = VK_SAMPLE_COUNT_1_BIT;
+		resolveCreateInfo.dstSubresource.baseArrayLayer = 1;
+		resolveCreateInfo.dstSubresource.layerCount = 1;
+		resolveCreateInfo.dstSubresource.mipLevel = 1;
+		resolveCreateInfo.dstOffset = { 0, 0, 0 };
+
+		VkFormat depthFormat = chooseSupportedFormat(
+			{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL, 
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+		VkImage resolvedImage = depthBufferImage[i];
+		
+		vkCmdResolveImage(commandBuffers[i], depthBufferImage[i], VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			resolvedImage, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, &resolveCreateInfo);
+
+	VkImageView resolvedDepthImageView = createImageView(resolvedImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
