@@ -713,7 +713,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;		// How to move between data after each vertex
 
 	// How data for an attribute is defined within a vertex
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescription;
+	std::array<VkVertexInputAttributeDescription, 4> attributeDescription;
 
 	// Position attribute
 	attributeDescription[0].binding = 0;
@@ -732,6 +732,12 @@ void VulkanRenderer::createGraphicsPipeline()
 	attributeDescription[2].location = 2;
 	attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
 	attributeDescription[2].offset = offsetof(Vertex, tex);
+
+	// Normal Attribute
+	attributeDescription[3].binding = 0;
+	attributeDescription[3].location = 3;
+	attributeDescription[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescription[3].offset = offsetof(Vertex, normal);
 
 	// Create Pipeline
 	// -- Vertex input --
@@ -1616,7 +1622,6 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 		for (size_t j = 0; j < modelList.size(); j++)
 		{
 			MeshModel thisModel = modelList[j];
-
 			glm::mat4 modelModel = thisModel.getModel();
 
 			vkCmdPushConstants(

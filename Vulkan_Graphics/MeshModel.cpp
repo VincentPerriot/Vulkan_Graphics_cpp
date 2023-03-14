@@ -108,6 +108,7 @@ Mesh MeshModel::loadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice,
     {
         // Set position
         vertices[i].pos = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+        vertices[i].normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
 
         // Set texture coords (does not necessarily exist)
         if (mesh->mTextureCoords[0])
