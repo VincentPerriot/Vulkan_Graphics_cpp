@@ -36,8 +36,6 @@ public:
 	int createMeshModel(std::string modelFile);
 	void updateModel(int modelId, glm::mat4 newModel);	
 
-
-
 	void draw();
 	void cleanup();
 
@@ -80,9 +78,18 @@ private:
 	std::vector<VkDeviceMemory> colorBufferImageMemory;
 	std::vector<VkImageView> colorBufferImageView;
 
+	std::vector<VkImage> resolvedColorBufferImage;
+	std::vector<VkDeviceMemory> resolvedColorBufferImageMemory;
+	std::vector<VkImageView> resolvedColorBufferImageView;
+
 	std::vector<VkImage> depthBufferImage;
 	std::vector<VkDeviceMemory> depthBufferImageMemory;
 	std::vector<VkImageView> depthBufferImageView;
+
+	std::vector<VkImage> resolvedDepthBufferImage;
+	std::vector<VkDeviceMemory> resolvedDepthBufferImageMemory;
+	std::vector<VkImageView> resolvedDepthBufferImageView;
+
 	
 	VkSampler textureSampler;
 
@@ -114,6 +121,8 @@ private:
 
 	std::vector<VkImage> textureImages;		
 	uint32_t mipLevels;
+	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
 	// Later optimisation, only keep 1 device memory with offsets
 	std::vector<VkDeviceMemory> textureImageMemory;
 	std::vector<VkImageView> textureImageViews;
@@ -156,7 +165,9 @@ private:
 	void createPushConstantRange();
 	void createGraphicsPipeline();
 	void createColorBufferImage();
+	void createResolvedColorBufferImage();
 	void createDepthBufferImage();
+	void createResolvedDepthBufferImage();
 	void createFramebuffer();
 	void createCommandPool();
 	void createCommandBuffers();
@@ -194,6 +205,7 @@ private:
 	//--Getter Functions
 	QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 	SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
+	VkSampleCountFlagBits getMaxUsableSampleCount();
 
 	//--Choose Functions
 	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
@@ -203,7 +215,7 @@ private:
 
 	// -- Create Functions
 	VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags  useFlags,
-	VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory, uint32_t mipLevels);
+	VkMemoryPropertyFlags propFlags, VkDeviceMemory* imageMemory, uint32_t mipLevels, VkSampleCountFlagBits numSamples);
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
