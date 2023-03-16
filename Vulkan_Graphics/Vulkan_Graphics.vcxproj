@@ -142,6 +142,7 @@
     <ClCompile Include="VulkanRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshModel.h" />
@@ -149,7 +150,6 @@
     <ClInclude Include="VulkanRenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="readme.md" />
     <None Include="Shaders\compile_shaders.bat" />
     <None Include="Shaders\second.frag" />
     <None Include="Shaders\second.vert" />

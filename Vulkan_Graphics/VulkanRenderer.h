@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "Mesh.h"
 #include "MeshModel.h"
+#include "Camera.h"
 
 
 class VulkanRenderer
@@ -34,7 +35,16 @@ public:
 	int init(GLFWwindow* newWindow);
 
 	int createMeshModel(std::string modelFile);
-	void updateModel(int modelId, glm::mat4 newModel);	
+	void updateModel(int modelId, glm::mat4 newModel);
+	void processInput(GLFWwindow* window, float deltaTime);
+	void mouseCallback(GLFWwindow* window, double xposIn, double yposIn);
+	void updateView(); 
+
+	// camera
+	Camera camera;
+	float lastX = swapChainExtent.width / 2.0f;
+	float lastY = swapChainExtent.height / 2.0f;
+	bool firstMouse = true;
 
 	void draw();
 	void cleanup();
@@ -44,6 +54,7 @@ public:
 private:
 	GLFWwindow* window;
 
+	// Frame
 	int currentFrame = 0;
 
 	// Scene objects

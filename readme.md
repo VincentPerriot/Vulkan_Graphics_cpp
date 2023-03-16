@@ -1,5 +1,5 @@
 # Vulkan Graphics Engine
 
-## Resources: Udemy Courses and Vulkan Tutorial Book
+## Resources: Udemy Course, Various Youtube Tutorial, OpenGL Adaptions
 
 ### Work in progress

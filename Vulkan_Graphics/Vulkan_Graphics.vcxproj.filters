@@ -47,6 +47,9 @@
     <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader.frag" />
@@ -54,7 +57,6 @@
     <None Include="Shaders\compile_shaders.bat">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="readme.md" />
     <None Include="Shaders\second.vert" />
     <None Include="Shaders\second.frag" />
   </ItemGroup>

@@ -35,9 +35,9 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createSynchronisation();
 
 
+
 		uboViewProjection.projection = glm::perspective(glm::radians(45.0f), (float)swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
-		uboViewProjection.view = glm::lookAt(glm::vec3(2.0f, 3.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		//uboViewProjection.model = glm::mat4(1.0f);
+		uboViewProjection.view = camera.GetViewMatrix();
 
 		// Vulkan inverts the y coordinates from openGL glm was built for
 		uboViewProjection.projection[1][1] *= -1;
@@ -63,6 +63,7 @@ void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel)
 
 void VulkanRenderer::draw()
 {
+
 	// -- GET NEXT IMAGE --
 	// Wait for given fence to signal open 
 	vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
@@ -1499,6 +1500,47 @@ bool VulkanRenderer::checkValidationLayerSupport()
 	return true;
 }
 
+void VulkanRenderer::processInput(GLFWwindow* window, float deltaTime)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.processKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.processKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.processKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.processKeyboard(RIGHT, deltaTime);
+}
+
+void VulkanRenderer::mouseCallback(GLFWwindow* window, double xposIn, double yposIn)
+{
+	float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.processMouseMovement(xoffset, yoffset);
+}
+
+void VulkanRenderer::updateView()
+{
+	uboViewProjection.view = camera.GetViewMatrix();
+}
+
 void VulkanRenderer::setupDebugMessenger() {
 	if (!enableValidationLayers) return;
 
@@ -1856,7 +1898,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
 	std::array<VkClearValue, 5> clearValues = {};
 	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };		//swapChain Image
-	clearValues[1].color = { 0.0f, 0.0f, 0.0f, 1.0f };		// Color buffer 
+	clearValues[1].color = { 0.2f, 0.2f, 0.2f, 1.0f };		// Color buffer 
 	clearValues[2].depthStencil.depth = 1.0f;				// Depth Stencil
 	clearValues[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };		// Resolved Color
 	clearValues[4].depthStencil.depth = 1.0f;				// Resolved Depth Stencil
