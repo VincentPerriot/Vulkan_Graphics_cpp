@@ -13,15 +13,18 @@ void main()
 	//int xHalf = 1366/2;
 	//if (gl_FragCoord.x > xHalf)
 	//{
-	//float lowerBound = 0.98;
-	//float upperBound = 1;
+	float lowerBound = 0.995;
+	float upperBound = 1;
 
-	//float depth = subpassLoad(inputDepth).r;
-	//float depthColorScaled = 1.0f - ((depth - lowerBound) / (upperBound - lowerBound));
-	//color = vec4( subpassLoad(inputColor).rgb * depthColorScaled, 1.0f);
-	//}
-	//else 
-	//{
-	color = subpassLoad(inputColor).rgba;
-	//}
+	float depth = subpassLoad(inputDepth).r;
+	float depthColorScaled = 1.0f - ((depth - lowerBound) / (upperBound - lowerBound));
+	vec4 a = subpassLoad(inputColor);
+	float Y = (a.r+a.r+a.b+a.b+a.g+a.g)/6.0f;
+
+	color = min(subpassLoad(inputColor).rgba ,vec4( subpassLoad(inputColor).rgb * depthColorScaled, 1.0f));
+//	}
+//	else 
+//	{
+//	color = subpassLoad(inputColor).rgba;
+//	}
 }

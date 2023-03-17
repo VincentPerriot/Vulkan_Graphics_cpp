@@ -26,8 +26,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createCommandPool();
 		createCommandBuffers();	
 		createTextureSampler();
-		// Uncomment when new dynamic UBO required
-		//allocateDynamicBufferTransferSpace();
+		allocateDynamicBufferTransferSpace();
 		createUniformBuffers();
 		createDescriptorPool();
 		createDescriptorSets();
@@ -1505,6 +1504,9 @@ void VulkanRenderer::processInput(GLFWwindow* window, float deltaTime)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		camera.reset();
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.processKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -1898,7 +1900,7 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
 	std::array<VkClearValue, 5> clearValues = {};
 	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };		//swapChain Image
-	clearValues[1].color = { 0.2f, 0.2f, 0.2f, 1.0f };		// Color buffer 
+	clearValues[1].color = { 0.1f, 0.1f, 0.1f, 1.0f };		// Color buffer 
 	clearValues[2].depthStencil.depth = 1.0f;				// Depth Stencil
 	clearValues[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };		// Resolved Color
 	clearValues[4].depthStencil.depth = 1.0f;				// Resolved Depth Stencil

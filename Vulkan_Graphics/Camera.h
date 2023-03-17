@@ -43,7 +43,7 @@ public:
 
 
     // constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, 
+    Camera(glm::vec3 position = glm::vec3(0.0f, 1.0f, 4.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, 
         float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY)
     {
         Position = position;
@@ -64,6 +64,19 @@ public:
 
         updateCameraVectors();
     }
+
+    // Reset assigned to space bar key
+	void reset()
+    {
+        Position = glm::vec3(0.0f, 1.0f, 4.0f);
+        Yaw = YAW;
+        Pitch = PITCH;
+        WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        updateCameraVectors();
+    }
+
+
      // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void processMouseMovement(float xoffset, float yoffset)
     {
@@ -116,5 +129,6 @@ public:
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));
     }
+
 
 };
