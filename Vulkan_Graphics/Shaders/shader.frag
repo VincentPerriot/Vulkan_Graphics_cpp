@@ -6,7 +6,16 @@ layout(location = 3) in vec3 viewPos;
 layout(location = 4) in vec3 normal;
 layout(location = 5) in vec3 fragPos;
 
+struct Light {
+  vec3 position;
+  vec3 color;
+  float intensity;
+};
 
+#define NUM_LIGHTS 6
+layout(std140, set = 0, binding = 0) buffer Lights {
+  Light lights[];
+};
 
 layout(set = 1, binding = 0) uniform sampler2D textureSampler;
 
@@ -43,10 +52,10 @@ void main() {
     vec3 lightPos = vec3(3.0, 5.0, 2.0);
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
-    outColor = CreateLight(lightPos, lightColor, normal, fragPos, viewDir);
-    outColor = outColor * texture(textureSampler, fragTex, 1.0f);
+    //outColor = CreateLight(lightPos, lightColor, normal, fragPos, viewDir);
+    //outColor = outColor * texture(textureSampler, fragTex, 1.0f);
 
-    //for(int i = 0; i < NUM_LIGHTS; i++){
-    //outColor += CreateLight(lightData[i].position, lightData[i].color, normal, fragPos, viewDir);
-    //}
+    for(int i = 0; i < NUM_LIGHTS; i++){
+        outColor += CreateLight(lights[i].position, lights[i].color, normal, fragPos, viewDir);
+    }
 }

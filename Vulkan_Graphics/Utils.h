@@ -8,6 +8,7 @@
 
 const int MAX_FRAMES_DRAWS = 2;
 const int MAX_OBJECTS = 40;
+const int NUM_LIGHTS = 6;
 
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME

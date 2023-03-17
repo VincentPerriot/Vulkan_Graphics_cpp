@@ -91,7 +91,7 @@ int main()
 		testMat = glm::scale(testMat, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glm::mat4 floorMat = glm::scale(glm::mat4(1.0f), glm::vec3(80.0f, 1.0f, 80.0f));
-		floorMat = glm::translate(floorMat, glm::vec3(0.0f, -2.0f, 0.0f));
+		floorMat = glm::translate(floorMat, glm::vec3(0.0f, -1.0f, 0.0f));
 
 		vulkanRenderer.updateModel(spaceShip, testMat);
 		vulkanRenderer.updateModel(plane, floorMat);

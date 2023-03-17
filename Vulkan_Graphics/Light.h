@@ -8,8 +8,9 @@
 #include "utils.h"
 
 struct LightBufferObject {
-	glm::mat3 position;
+	glm::vec3 position;
 	glm::vec3 color;
+	float intensity;
 };
 
 
@@ -20,28 +21,22 @@ public:
 	Light();
 
 	Light(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, 
-		VkQueue transferQueue, VkCommandPool transferCommandPool, 
-		const glm::vec3 &position, const glm::vec3 &color, const glm::vec3 &intensity);
+		VkQueue transferQueue, VkCommandPool transferCommandPool,
+		std::vector<LightBufferObject> *lights);
 
-	void setLBO(LightBufferObject newLight);
-	LightBufferObject getLBO();
+	void setLights(std::vector<LightBufferObject> newLight);
+	VkBuffer getLightsBuffer();
 
 	void destroyLBO();
 
 	~Light();
 private:
-	 LightBufferObject lightBufferObject;
 
-	int texId;
+	std::vector<LightBufferObject> lights;
 
-	int vertexCount;
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-
-	int indexCount;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
-
+	int lightsCount;
+	VkBuffer lightsBuffer;
+	VkDeviceMemory lightsBufferMemory;
 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;

@@ -25,6 +25,7 @@
 #include "Mesh.h"
 #include "MeshModel.h"
 #include "Camera.h"
+#include "Light.h"
 
 
 class VulkanRenderer
@@ -66,6 +67,8 @@ private:
 		glm::mat4 view;
 	} uboViewProjection;
 
+	Light lights;
+
 	// Main Vulkan Components
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
@@ -101,6 +104,8 @@ private:
 	std::vector<VkDeviceMemory> resolvedDepthBufferImageMemory;
 	std::vector<VkImageView> resolvedDepthBufferImageView;
 
+	VkBuffer lightsBuffer;
+	VkDeviceMemory lightsBufferMemory;
 	
 	VkSampler textureSampler;
 

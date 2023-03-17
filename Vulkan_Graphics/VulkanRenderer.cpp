@@ -13,6 +13,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createSurface();
 		getPhysicalDevice();
 		createLogicalDevice();
+
 		createSwapChain();
 		createRenderPass();
 		createDescriptorSetLayout();
@@ -27,6 +28,23 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createCommandBuffers();	
 		createTextureSampler();
 		//allocateDynamicBufferTransferSpace();
+
+		
+		// TODO REFACTOR 
+		std::vector<LightBufferObject> lightVector(NUM_LIGHTS);
+
+		for (size_t i = 0; i < NUM_LIGHTS; i++)
+		{
+			LightBufferObject light = {};
+			light.color = glm::vec3(i, 1.0f, 1.0f);
+			light.intensity = 1.0f;
+			light.position = glm::vec3(i, 2.0f, 1.0f);
+		}
+
+		lights = Light(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, 
+			&lightVector);
+
+
 		createUniformBuffers();
 		createDescriptorPool();
 		createDescriptorSets();
@@ -171,6 +189,8 @@ void VulkanRenderer::cleanup()
 		vkDestroyImage(mainDevice.logicalDevice, colorBufferImage[i], nullptr);
 		vkFreeMemory(mainDevice.logicalDevice, colorBufferImageMemory[i], nullptr);
 	}
+
+	lights.destroyLBO();
 
 	vkDestroyDescriptorPool(mainDevice.logicalDevice, descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, descriptorSetLayout, nullptr);
@@ -1922,6 +1942,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage)
 
 		// Binds pipeline to be used in RenderPAss
 		vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+
 	
 		for (size_t j = 0; j < modelList.size(); j++)
 		{
