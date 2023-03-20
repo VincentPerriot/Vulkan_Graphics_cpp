@@ -45,10 +45,9 @@ int main()
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
+	// Set up Camera 
 	vulkanRenderer.camera.Position = glm::vec3(0.0f, 1.0f, 4.0f);
 	vulkanRenderer.camera.Up = glm::vec3(0.0f, 1.0f, 0.0f);
-	vulkanRenderer.camera.Pitch = 0.0f;
-	vulkanRenderer.camera.Yaw = -90.0f;
 
 	//int helicopter = vulkanRenderer.createMeshModel("Models/viking_room.obj");
 	int spaceShip = vulkanRenderer.createMeshModel("Models/E45.obj");

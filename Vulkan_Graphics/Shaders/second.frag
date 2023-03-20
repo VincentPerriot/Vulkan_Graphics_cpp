@@ -19,7 +19,6 @@ void main()
 	float depth = subpassLoad(inputDepth).r;
 	float depthColorScaled = 1.0f - ((depth - lowerBound) / (upperBound - lowerBound));
 	vec4 a = subpassLoad(inputColor);
-	float Y = (a.r+a.r+a.b+a.b+a.g+a.g)/6.0f;
 
 	color = min(subpassLoad(inputColor).rgba ,vec4( subpassLoad(inputColor).rgb * depthColorScaled, 1.0f));
 //	}
