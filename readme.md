@@ -6,16 +6,16 @@
 
 ### How I built the website
 
-#### Initially built following this 26hours Udemy Course
+#### Initially built following this Udemy Course (26h code along)
 https://www.udemy.com/course/learn-the-vulkan-api-with-cpp/
 
-#### Further updated from different Vulkan tutorials websites
+#### Further updated with different Vulkan tutorials websites
 https://vulkan-tutorial.com/
 
-#### Further updated with this excellent Youtube Tutorial playlist from Brendan Galea
+#### Further updated with Youtube Tutorials playlist from Brendan Galea
 https://www.youtube.com/@BrendanGalea/playlists
 
-#### Further udapted with tips from the Graphics Rendering Cookbook from Packt Editions 
+#### Further updated with tips from the Graphics Rendering Cookbook from Packt Editions 
 https://www.packtpub.com/product/3d-graphics-rendering-cookbook/9781838986193
 
 #### Further updated with Vulkan examples from Sascha Willems
