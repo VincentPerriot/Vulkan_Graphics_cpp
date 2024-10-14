@@ -4,12 +4,10 @@
 
 ![image](https://github.com/VincentPerriot/Vulkan_Graphics_cpp/assets/32515747/6668620b-e7b6-445e-a306-aa5273963347)
 
-### How I built the website
-
-#### Initially built following this Udemy Course (26h code along)
+#### Initially built following this Udemy Course
 https://www.udemy.com/course/learn-the-vulkan-api-with-cpp/
 
-#### Further updated with different Vulkan tutorials websites
+#### Further updated with different Vulkan tutorial websites
 https://vulkan-tutorial.com/
 
 #### Further updated with Youtube Tutorials playlist from Brendan Galea
@@ -22,5 +20,5 @@ https://www.packtpub.com/product/3d-graphics-rendering-cookbook/9781838986193
 https://github.com/SaschaWillems
 
 ### Lessons and further updates
-Adapting many resources helped me understand the in and outs of Vulkan but does not make for great software architecture. This project is now difficult to scale.
-Currently working on a new Renderer using the lessons learned here, see Melting Project
+Adapting many resources helped me understand the ins and outs of Vulkan but does not make for great software architecture. This project is now difficult to scale.
+Currently working on a new Renderer using the lessons learned here. Coming SoonTM
